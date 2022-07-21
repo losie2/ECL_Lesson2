@@ -36,21 +36,37 @@ public:
     int widthPixel; // 가로 픽셀
     int heightPixel; // 세로 픽셀
 
-    float verAngle; // 수직 시야각
-    float horAngle; // 수평 시야각
+    float pitch; // 수직 시야각
+    float yaw; // 수평 시야각
 };
 
 
-Mat GenView(Mat* pano, float phi, float theta) // phi = 경도, theta = 위도
+Mat GenView(Mat* pano, Camera* Player) // yaw = 경도, pitch = 위도
 {
-    
-
-    int outWidth = pano->size().width / 4;
-    int outHeight = pano->size().height / 4;
+    float u, v;
+    float phi, theta;
 
 
+    /*
+        Camera angle
+    */
+    u = (Player->yaw / pano->size().width);
+    v = (Player->pitch / pano->size().height);
+
+    phi = 2 * u * PI;
+    theta = v * PI;
 
     Mat view;
+    view = Mat::zeros(Player->heightPixel, Player->widthPixel, pano->type());
+
+    for (int j = 0; j < Player->heightPixel; j++) {
+
+        for (int i = 0; i < Player->widthPixel; i++)
+        {
+
+        }
+    }
+    return view;
 }
 
 int main(void) {
@@ -62,9 +78,10 @@ int main(void) {
     player.widthPixel = img.size().width / 2;
     player.heightPixel = img.size().height / 2;
 
-    player.verAngle = 0;
-    player.horAngle = 0;
+    player.pitch = 0;
+    player.yaw = 0;
 
+    Mat quarterImg = Mat::zeros(player.heightPixel, player.widthPixel, img.type());
 
     if (img.empty()) {
         cerr << "Image load failed!" << endl;
@@ -77,14 +94,26 @@ int main(void) {
     while (true) {
         int keycode = waitKeyEx();
 
-        if (keycode == 0x250000 || keycode == 0x270000)
+        if (keycode == 0x250000 && player.yaw - 5 > 0) // yaw left
         {
-            img = ~img;
-            imshow("img2", img);
+            player.yaw -= 5;
+            quarterImg = GenView(&img, &player);
+            
         }
-        else if (keycode == 27 || keycode == 'q' || keycode == 'Q')
+        else if (keycode == 0x270000 && player.yaw + 5 < img.size().width) // yaw right
         {
-            break;
+            player.yaw += 5;
+            quarterImg = GenView(&img, &player);
+        }
+        else if (keycode == 0x260000) // pitch up
+        {
+            player.pitch += 5;
+            quarterImg = GenView(&img, &player);
+        }
+        else if (keycode == 0x280000) // pitch down
+        {
+            player.pitch -= 5;
+            quarterImg = GenView(&img, &player);
         }
     }
     return 0;
