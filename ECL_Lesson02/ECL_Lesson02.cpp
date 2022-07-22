@@ -41,35 +41,64 @@ public:
 };
 
 
-Mat GenView(Mat* pano, Camera* Player) // yaw = 경도, pitch = 위도
+void GenView(Mat* pano, Camera* Player) // yaw = 경도, pitch = 위도
 {
     float u, v;
     float phi, theta;
 
-
+    Mat view;
+    view = Mat::zeros(Player->heightPixel, Player->widthPixel, pano->type());
+    
     /*
         Camera angle
     */
+    
     u = (Player->yaw / pano->size().width);
     v = (Player->pitch / pano->size().height);
 
     phi = 2 * u * PI;
     theta = v * PI;
 
-    Mat view;
-    view = Mat::zeros(Player->heightPixel, Player->widthPixel, pano->type());
-
-    for (int j = 0; j < Player->heightPixel; j++) {
-
-        for (int i = 0; i < Player->widthPixel; i++)
+    int xPixel = 0;
+    int yPixel = 0;
+    for (int j = Player->pitch - (Player->heightPixel / 2); j < (Player->heightPixel / 2) + Player->pitch; j++) {
+        v = 1 - ((float)j / pano->size().height);
+        theta = v * PI;
+        for (int i = Player->yaw - (Player->widthPixel / 2); i < (Player->widthPixel / 2) + Player->yaw; i++)
         {
+            u = ((float)i / pano->size().width);
+            phi = 2 * u * PI;            
+            float x, y, z; // 단위 벡터
+            x = cos(phi) * sin(theta) * -1;
+            y = sin(phi) * sin(theta) * -1;
+            z = cos(theta);
 
+            float xa, ya, za;
+            float a;
+
+            cout << x << " " << y << " " << z << " " << endl;
+
+            a = max(abs(x), max(abs(y), abs(z)));
+
+            /*
+                큐브 면 중 하나에 있는 단위 벡터와 평행한 벡터.
+                이 때, ya가 -1인지 1인지(Left, Right) 값을 보고 평면을 결정.
+                ya가 1 or -1이라면 y벡터의 변화가 없다는 뜻. 즉 xz평면만 고려한다는 의미.
+                xa와 za도 동일하게 적용.
+            */
+            xa = x / a;
+            ya = y / a;
+            za = z / a;
+
+           // view.at<Vec3b>(yPixel, abs((phi * Player->widthPixel))) = pano->at<Vec3b>(0, 0);
         }
     }
-    return view;
+    imshow("img", view);
+    waitKey(0);
+ //   return view;
 }
 
-int main(void) {
+int main(void) {    
 
     /* 파노라마 이미지 불러오기 */
     Mat img = imread("Panorama.png"); //자신이 저장시킨 이미지 이름이 입력되어야 함, 확장자까지
@@ -78,10 +107,11 @@ int main(void) {
     player.widthPixel = img.size().width / 2;
     player.heightPixel = img.size().height / 2;
 
-    player.pitch = 0;
-    player.yaw = 0;
+    player.pitch = 50;
+    player.yaw = 250;
 
     Mat quarterImg = Mat::zeros(player.heightPixel, player.widthPixel, img.type());
+    GenView(&img, &player);
 
     if (img.empty()) {
         cerr << "Image load failed!" << endl;
@@ -89,8 +119,8 @@ int main(void) {
     }
 
     namedWindow("img");
-    imshow("img", img);
-
+    //imshow("img", img);
+    /*
     while (true) {
         int keycode = waitKeyEx();
 
@@ -115,7 +145,7 @@ int main(void) {
             player.pitch -= 5;
             quarterImg = GenView(&img, &player);
         }
-    }
+    }*/
     return 0;
 
     /*
