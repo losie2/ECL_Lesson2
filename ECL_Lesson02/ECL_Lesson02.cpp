@@ -290,7 +290,7 @@ void InsertClip(Mat SourceImg)
 	int height = SourceImg.rows;
 
 	double radius = height / 2;
-
+    player.horAngle = 0;
 	int viewWidth = (int)((double)height * HorizontalViewAngle / 2);
 	int viewHeight = (int)((double)height * VerticalViewAngle / 2);
 
@@ -320,11 +320,11 @@ void InsertClip(Mat SourceImg)
 			{
 				AxisDouble axis2;
 				axis2 = CalcCubicXYZ(axis.x, axis.y, axis.z);
-
+    }
 				int y = (int)(axis2.y * radius) + radius;
 				int z = (int)(axis2.z * radius) + radius;
 
-
+    while (true) {
 				if (y > radius - viewWidth / 2 && y < radius + viewWidth / 2 && z > radius - viewHeight / 2 && z < radius + viewHeight / 2)
 				{
 					int PointX = y - ((height - viewWidth) / 2);
@@ -367,6 +367,8 @@ int main()
 
 	GenView(SourceImg);
 
-
+    SphericalToCubemap = CvtSph2Cub(&img);
 	return 0;
+
+    return 0;*/
 }
