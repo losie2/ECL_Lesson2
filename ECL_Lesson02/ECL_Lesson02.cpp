@@ -179,7 +179,7 @@ void GenView(Mat SourceImg)
 			if (axis.x > 0)
 			{
 				/*
-					전체 구면 좌표계 내에서 x > 0 인 평면만 고려, 
+					전체 구면 좌표계 내에서 x > 0 인 평면만 고려,
 					회전 변환을 거친 후 좌표계에는 변동이 없다는 점을 이용.
 				*/
 				AxisDouble axis2;
@@ -290,7 +290,7 @@ void InsertClip(Mat SourceImg)
 	int height = SourceImg.rows;
 
 	double radius = height / 2;
-    player.horAngle = 0;
+
 	int viewWidth = (int)((double)height * HorizontalViewAngle / 2);
 	int viewHeight = (int)((double)height * VerticalViewAngle / 2);
 
@@ -320,11 +320,11 @@ void InsertClip(Mat SourceImg)
 			{
 				AxisDouble axis2;
 				axis2 = CalcCubicXYZ(axis.x, axis.y, axis.z);
-    }
+
 				int y = (int)(axis2.y * radius) + radius;
 				int z = (int)(axis2.z * radius) + radius;
 
-    while (true) {
+
 				if (y > radius - viewWidth / 2 && y < radius + viewWidth / 2 && z > radius - viewHeight / 2 && z < radius + viewHeight / 2)
 				{
 					int PointX = y - ((height - viewWidth) / 2);
@@ -367,8 +367,6 @@ int main()
 
 	GenView(SourceImg);
 
-    SphericalToCubemap = CvtSph2Cub(&img);
-	return 0;
 
-    return 0;*/
+	return 0;
 }
