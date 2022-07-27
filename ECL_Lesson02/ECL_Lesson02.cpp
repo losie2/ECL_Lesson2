@@ -29,8 +29,8 @@ double HorizontalViewAngle = 1.5f;
 double VerticalViewAngle = 1.2f;
 int ViewSize = 500;
 
-double thetaPlus = 0;
-double phiPlus = 0;
+double yAxisRotate = 0;
+double zAxisRotate = 0;
 
 Axis getNearPixel(Mat Img, int x, int y);
 Mat remapImage(Mat imgIn);
@@ -64,7 +64,7 @@ Axis getNearPixel(Mat Img, int x, int y)
 				{
 					continue;
 				}
-				// (3, 3) 범위 내에서 보간.
+				// (3, 3) 범위 내에서 3채널에 모두 보간.
 				if (!(Img.at<Vec3b>(Point(x + i, y + j))[0] == 0 && Img.at<Vec3b>(Point(x + i, y + j))[1] == 0 && Img.at<Vec3b>(Point(x + i, y + j))[2] == 0))
 				{
 					xy.x = x + i;
@@ -118,14 +118,14 @@ AxisDouble CalcThetaPhiToXYZ(double theta, double phi)
 	double z1 = sin(theta);
 
 	//z축 회전 변환
-	double x2 = x1 * cos(phiPlus) - y1 * sin(phiPlus);
-	double y2 = x1 * sin(phiPlus) + y1 * cos(phiPlus);
+	double x2 = x1 * cos(zAxisRotate) - y1 * sin(zAxisRotate);
+	double y2 = x1 * sin(zAxisRotate) + y1 * cos(zAxisRotate);
 	double z2 = z1;
 
 	//y축 회전 변환
-	double x3 = x2 * cos(thetaPlus) + z2 * sin(thetaPlus);
+	double x3 = x2 * cos(yAxisRotate) + z2 * sin(yAxisRotate);
 	double y3 = y2;
-	double z3 = -x2 * sin(thetaPlus) + z2 * cos(thetaPlus);
+	double z3 = -x2 * sin(yAxisRotate) + z2 * cos(yAxisRotate);
 
 	axis.x = x3;
 	axis.y = y3;
@@ -138,7 +138,9 @@ AxisDouble CalcCubicXYZ(double x, double y, double z)
 {
 	AxisDouble axis;
 
-	//큐브맵화
+	/*
+	큐브맵화, 항상 Front Face에서 렌더링 하기 때문에 단위벡터는 x이다. .
+	*/
 	double a = x;
 	double x1 = x / a;
 	double y1 = y / a;
@@ -162,7 +164,7 @@ void GenView(Mat SourceImg)
 	int viewHeight = (int)((double)height * VerticalViewAngle / Multiple);
 
 	imgView = Mat(viewHeight, viewWidth, CV_8UC3, Scalar(0, 0, 0));
-	resize(SourceImg, imgPanorama, Size(width, height), 0, 1);
+	cv::resize(SourceImg, imgPanorama, Size(width, height), 0, 1);
 
 
 	for (int i = 0; i < width; i++)
@@ -185,6 +187,11 @@ void GenView(Mat SourceImg)
 				AxisDouble axis2;
 				axis2 = CalcCubicXYZ(axis.x, axis.y, axis.z);
 
+				/*
+					Transformation normalization Cubemap Coordinate to Image Viewer Pixel Coordinate
+					Length of edge on YZ-Face
+
+				*/
 				int y = (int)(axis2.y * radius) + viewWidth / 2;
 				int z = (int)(axis2.z * radius) + viewHeight / 2;
 
@@ -207,9 +214,9 @@ void GenView(Mat SourceImg)
 		}
 	}
 	imgView = remapImage(imgView);
-	resize(imgView, imgView, Size(ViewSize, (int)((double)ViewSize / (HorizontalViewAngle / VerticalViewAngle))), 0, 1);
-	imshow("Panorama", imgPanorama);
-	imshow("View", imgView);
+	cv::resize(imgView, imgView, Size(ViewSize, (int)((double)ViewSize / (HorizontalViewAngle / VerticalViewAngle))), 0, 1);
+	cv::imshow("Panorama", imgPanorama);
+	cv::imshow("View", imgView);
 
 	int ch = waitKey();
 	KeyDownEvent(ch, SourceImg);
@@ -222,12 +229,12 @@ void KeyDownEvent(int ch, Mat SourceImg)
 	case 's'://Theta Up
 		//if (thetaPlus <= PI / 2)
 	{
-		thetaPlus += 5 * (PI / 365);
+		yAxisRotate += 5 * (PI / 365);
 		//if (thetaPlus > PI / 2)
 		{
 			//	thetaPlus = PI / 2;
 		}
-		cout << "Lat : " << -thetaPlus << ", Long : " << -phiPlus << endl;
+		cout << "Lat : " << -yAxisRotate << ", Long : " << -zAxisRotate << endl;
 	}
 
 	GenView(SourceImg);
@@ -236,42 +243,42 @@ void KeyDownEvent(int ch, Mat SourceImg)
 	case 'w'://Theta Down
 		//if (thetaPlus >= -PI / 2)
 	{
-		thetaPlus -= 5 * (PI / 365);
+		yAxisRotate -= 5 * (PI / 365);
 		//if (thetaPlus < -PI / 2)
 		{
 			//	thetaPlus = -PI / 2;
 		}
-		cout << "Lat : " << -thetaPlus << ", Long : " << -phiPlus << endl;
+		cout << "Lat : " << -yAxisRotate << ", Long : " << -zAxisRotate << endl;
 	}
 
 	GenView(SourceImg);
 	break;
 
 	case 'd'://Phi Down
-		phiPlus -= 5 * (2 * PI / 365);
+		zAxisRotate -= 5 * (2 * PI / 365);
 
-		if (phiPlus <= 0)
+		if (zAxisRotate <= 0)
 		{
-			phiPlus = 2 * PI;
+			zAxisRotate = 2 * PI;
 		}
-		cout << "Lat : " << -thetaPlus << ", Long : " << -phiPlus << endl;
+		cout << "Lat : " << -yAxisRotate << ", Long : " << -zAxisRotate << endl;
 
 		GenView(SourceImg);
 		break;
 
 	case 'a'://Phi Up
-		phiPlus += 5 * (2 * PI / 365);
-		if (phiPlus >= 2 * PI)
+		zAxisRotate += 5 * (2 * PI / 365);
+		if (zAxisRotate >= 2 * PI)
 		{
-			phiPlus = 0;
+			zAxisRotate = 0;
 		}
-		cout << "Lat : " << -thetaPlus << ", Long : " << -phiPlus << endl;
+		cout << "Lat : " << -yAxisRotate << ", Long : " << -zAxisRotate << endl;
 
 		GenView(SourceImg);
 		break;
 
 	case 'k'://Insert Image
-		cout << "Insert Image At Lat : " << -thetaPlus << ", Long : " << -phiPlus << endl;
+		cout << "Insert Image At Lat : " << -yAxisRotate << ", Long : " << -zAxisRotate << endl;
 		InsertClip(SourceImg);
 		GenView(SourceImg);
 		break;
@@ -302,7 +309,7 @@ void InsertClip(Mat SourceImg)
 		return;
 	}
 	Mat Clip;
-	resize(OriginClip, Clip, Size(viewWidth, viewHeight), 0, 1);
+	cv::resize(OriginClip, Clip, Size(viewWidth, viewHeight), 0, 1);
 
 
 	for (int i = 0; i < width; i++)
@@ -363,7 +370,7 @@ int main()
 		return -1;
 	}
 	Mat SourceImg;
-	resize(OriginImg, SourceImg, Size(1400, 700), 0, 1);
+	cv::resize(OriginImg, SourceImg, Size(1400, 700), 0, 1);
 
 	GenView(SourceImg);
 
